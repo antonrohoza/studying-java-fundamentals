@@ -1,47 +1,53 @@
 package com.antonr.datastructures;
 
+import java.util.Iterator;
+
 // Abstract Data Type
-public interface List {
-    // add value to the end of the list
-    void add(Object value);
+public interface List<T> {
 
-    // [A, B, C, null, null] size = 3
-    // add (D, [0,1,2,3]) => add(F, 4)
-    // we can add value by index between [0, size]
-    // otherwise throw new IndexOutOfBoundsException
-    void add(Object value, int index);
+  // add value to the end of the list
+  void add(T value);
 
-    // we can remove value by index between [0, size - 1]
-    // otherwise throw new IndexOutOfBoundsException
+  // [A, B, C, null, null] size = 3
+  // add (D, [0,1,2,3]) => add(F, 4)
+  // we can add value by index between [0, size]
+  // otherwise throw new IndexOutOfBoundsException
+  void add(T value, int index);
 
-    // [A, B, C] remove = 0
-    // [B (index = 0) , C (index = 1)]
-    Object remove(int index);
+  // we can remove value by index between [0, size - 1]
+  // otherwise throw new IndexOutOfBoundsException
 
-    // [A, B, C, null, null] size = 3
-    // we can get value by index between [0, size - 1]
-    // otherwise throw new IndexOutOfBoundsException
-    Object get(int index);
+  // [A, B, C] remove = 0
+  // [B (index = 0) , C (index = 1)]
+  T remove(int index);
 
-    // we can set value by index between [0, size - 1]
-    // otherwise throw new IndexOutOfBoundsException
-    Object set(Object value, int index);
+  // [A, B, C, null, null] size = 3
+  // we can get value by index between [0, size - 1]
+  // otherwise throw new IndexOutOfBoundsException
+  T get(int index);
 
-    void clear();
+  // we can set value by index between [0, size - 1]
+  // otherwise throw new IndexOutOfBoundsException
+  T set(T value, int index);
 
-    int size();
+  void clear();
 
-    boolean isEmpty();
+  int size();
 
-    boolean contains(Object value);
+  boolean isEmpty();
 
-    // [A, B, A, C] indexOf(A) -> 0
-    // -1 if not exist
-    int indexOf(Object value);
+  boolean contains(T value);
 
-    // [A, B, A, C] lastIndexOf(A) -> 2
-    int lastIndexOf(Object value);
+  // [A, B, A, C] indexOf(A) -> 0
+  // -1 if not exist
+  int indexOf(T value);
 
-    // [A, B, C]
-    String toString();
+  // [A, B, A, C] lastIndexOf(A) -> 2
+  int lastIndexOf(T value);
+
+  // [A, B, C]
+  String toString();
+
+
+  Iterator<T> iterator();
 }

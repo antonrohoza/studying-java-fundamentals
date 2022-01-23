@@ -1,107 +1,84 @@
 package com.antonr.datastructures;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.StringJoiner;
 
-public class LinkedList implements List {
+public class LinkedList<T> implements List<T>, Iterable<T> {
 
-  static class Node {
-
-    Object element;
-    Node next;
-
-    public Node(Object element) {
-      this.element = element;
-    }
-  }
-
-  private Node first;
-  private Node last;
+  private Node<T> head;
+  private Node<T> tail;
   private int size;
 
   @Override
-  public void add(Object value) {
+  public void add(T value) {
     add(value, size);
   }
 
-  private Node getPreviousElementByIndex(int index) {
-    Node current = first;
-    for (int i = 0; i < index; i++) {
-      current = current.next;
-    }
-    return current;
-  }
-
   @Override
-  public void add(Object value, int index) {
-    if (index < 0 || index > size) {
-      throw new IndexOutOfBoundsException(
-          "Wrong index, index must belong to the interval [0; size of the list]");
-    }
-    Node newNode = new Node(value);
-    if (first == null) {
-      first = last = newNode;
+  public void add(T value, int index) {
+    ListUtils.checkIndex(index, size + 1);
+    Node<T> newNode = new Node<>(value);
+    if (head == null) {
+      head = tail = newNode;
     } else if (index == 0) {
-      newNode.next = first;
-      first = newNode;
+      newNode.next = head;
+      head.previous = newNode;
+      head = newNode;
     } else if (index == size) {
-      last.next = newNode;
-      last = newNode;
+      tail.next = newNode;
+      newNode.previous = tail;
+      tail = newNode;
     } else {
-      Node currentNode = getPreviousElementByIndex(index + 1);
-      newNode.next = currentNode.next;
-      currentNode.next = newNode;
+      Node<T> previousElement = getNodeByIndex(index - 1);
+      newNode.previous = previousElement;
+      previousElement.next = newNode;
+      newNode.next = previousElement.next;
+      previousElement.next.previous = newNode;
     }
     size++;
   }
 
   @Override
-  public Object remove(int index) {
-    if (index < 0 || index > size) {
-      throw new IndexOutOfBoundsException(
-          "Wrong index, index must belong to the interval [0; size of the list]");
-    }
-    Node removedElement;
+  @SuppressWarnings("unchecked")
+  public T remove(int index) {
+    ListUtils.checkIndex(index, size);
+    Node<T> removedElement;
     if (index == 0) {
-      removedElement = first;
-      first = first.next;
-    } else if (index == size) {
-      Node previousElement = getPreviousElementByIndex(index - 1);
-      removedElement = previousElement.next;
-      previousElement.next = null;
-      last = previousElement;
+      removedElement = head;
+      head = head.next;
+    } else if (index == size - 1) {
+      removedElement = tail;
+      tail = tail.previous;
     } else {
-      Node previousElement = getPreviousElementByIndex(index - 1);
+      Node<T> previousElement = getNodeByIndex(index - 1);
       removedElement = previousElement.next;
       previousElement.next = previousElement.next.next;
-      last = previousElement.next;
+      previousElement.next.previous = previousElement;
     }
     size--;
-    return removedElement;
+    return (T) removedElement;
   }
 
   @Override
-  public Object get(int index) {
-    if (index < 0 || index > size) {
-      throw new IndexOutOfBoundsException(
-          "Wrong index, index must belong to the interval [0; size of the list]");
-    }
-    return getPreviousElementByIndex(index).element;
+  public T get(int index) {
+    ListUtils.checkIndex(index, size);
+    return getNodeByIndex(index).element;
   }
 
   @Override
-  public Object set(Object value, int index) {
-    if (index < 0 || index > size) {
-      throw new IndexOutOfBoundsException(
-          "Wrong index, index must belong to the interval [0; size of the list]");
-    }
-    Node currentElement = getPreviousElementByIndex(index);
+  @SuppressWarnings("unchecked")
+  public T set(T value, int index) {
+    ListUtils.checkIndex(index, size);
+    Node<T> currentElement = getNodeByIndex(index);
     currentElement.element = value;
-    return currentElement;
+    return (T) currentElement;
   }
 
   @Override
   public void clear() {
-    first = last = null;
+    head = tail = null;
     size = 0;
   }
 
@@ -116,14 +93,24 @@ public class LinkedList implements List {
   }
 
   @Override
-  public boolean contains(Object value) {
-    return indexOf(value) != -1;
+  public boolean contains(T value) {
+    Node<T> currentHead = head;
+    Node<T> currentTail = tail;
+    for (int i = 0; i < size / 2; i++) {
+      if (Objects.equals(currentHead.element, value)
+          || Objects.equals(currentTail.element, value)) {
+        return true;
+      }
+      currentHead = currentHead.next;
+      currentTail = currentTail.previous;
+    }
+    return false;
   }
 
   @Override
   public int indexOf(Object value) {
-    Node current;
-    current = first;
+    Node<T> current;
+    current = head;
     for (int i = 0; i < size; i++) {
       if (Objects.equals(current.element, value)) {
         return i;
@@ -135,31 +122,95 @@ public class LinkedList implements List {
 
   @Override
   public int lastIndexOf(Object value) {
-    int lastIndex = -1;
-    Node current;
-    current = first;
-    for (int i = 0; i < size; i++) {
-      if (Objects.equals(current.element, value) && lastIndex < i) {
-        lastIndex = i;
+    Node<T> current;
+    current = tail;
+    for (int i = size - 1; i >= 0; i--) {
+      if (Objects.equals(current.element, value)) {
+        return i;
       }
-      current = current.next;
+      current = current.previous;
     }
-    return lastIndex;
+    return -1;
   }
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder("[");
-    Node current = first;
-    for (int i = 0; i < size; i++) {
-      sb.append(" ").append(current.element);
+    StringJoiner sj = new StringJoiner(", ", "[", "]");
+    Node<T> current = head;
+    while (current != null) {
+      sj.add(String.valueOf(current.element));
       current = current.next;
-      if (i != size - 1) {
-        sb.append(",");
-      } else {
-        sb.append(" ");
+    }
+    return sj.toString();
+  }
+
+  @Override
+  public Iterator<T> iterator() {
+    return new Iterator<T>() {
+      Node<T> current = null;
+      int counter = -1;
+      boolean lastElementRemoved = false;
+
+      @Override
+      public boolean hasNext() {
+        return (counter < size - 1) && (size != 0);
+      }
+
+      @Override
+      public T next() {
+        if (lastElementRemoved || counter >= size - 1) {
+          throw new NoSuchElementException("There is no such element");
+        }
+        if (counter == -1) {
+          current = head;
+        } else {
+          current = current.next;
+        }
+        counter++;
+        return current.element;
+      }
+
+      @Override
+      public void remove() {
+        if (counter < 0) {
+          throw new IllegalStateException(
+              "There is no elements for removing, counter before fist element!");
+        }
+        if (Objects.equals(current, tail)) {
+          lastElementRemoved = true;
+        }
+        current = current.previous;
+        LinkedList.this.remove(counter);
+        counter--;
+      }
+    };
+  }
+
+  Node<T> getNodeByIndex(int index) {
+    Node<T> current;
+    if (index < size / 2) {
+      current = head;
+      for (int i = 0; i < index; i++) {
+        current = current.next;
+      }
+    } else {
+      current = tail;
+      for (int i = size - 1; i > index; i--) {
+        current = current.previous;
       }
     }
-    return sb.append("]").toString();
+    return current;
   }
+
+  private static class Node<T> {
+
+    T element;
+    Node<T> next;
+    Node<T> previous;
+
+    public Node(T element) {
+      this.element = element;
+    }
+  }
+
 }

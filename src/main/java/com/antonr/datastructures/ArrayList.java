@@ -1,42 +1,37 @@
 package com.antonr.datastructures;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.StringJoiner;
 
-public class ArrayList implements List {
+public class ArrayList<T> implements List<T>, Iterable<T> {
 
   private static final double GROWTH_FACTOR = 1.5;
   private static final int DEFAULT_CAPACITY = 10;
   private Object[] elements;
   private int size;
 
-  public ArrayList(int initCapacity) {
-    if (initCapacity <= 0) {
-      throw new IllegalArgumentException();
-    }
-    elements = new Object[initCapacity];
-  }
-
   public ArrayList() {
-    elements = new Object[DEFAULT_CAPACITY];
+    this(DEFAULT_CAPACITY);
   }
 
-  private void resize() {
-    Object[] temp = new Object[(int) (elements.length * GROWTH_FACTOR)];
-    System.arraycopy(elements, 0, temp, 0, size);
-    elements = temp;
+  public ArrayList(int initialCapacity) {
+    if (initialCapacity > 0) {
+      elements = new Object[initialCapacity];
+    } else {
+      throw new IllegalArgumentException("Initial capacity should be at least 1");
+    }
   }
 
   @Override
-  public void add(Object value) {
+  public void add(T value) {
     add(value, size);
   }
 
   @Override
-  public void add(Object value, int index) {
-    if (index < 0 || index > size) {
-      throw new IndexOutOfBoundsException(
-          "Wrong index, index must belong to the interval [0; size of the list]");
-    }
+  public void add(T value, int index) {
+    ListUtils.checkIndex(index, size + 1);
     if (size == elements.length) {
       resize();
     }
@@ -46,37 +41,30 @@ public class ArrayList implements List {
   }
 
   @Override
-  public Object remove(int index) {
-    if (index < 0 || index > size) {
-      throw new IndexOutOfBoundsException(
-          "Wrong index, index must belong to the interval [0; size of the list]");
-    }
-    Object removedElement = elements[index];
+  @SuppressWarnings("unchecked")
+  public T remove(int index) {
+    ListUtils.checkIndex(index, size);
+    T removedElement = (T) elements[index];
     if (index < size - 1) {
       System.arraycopy(elements, index + 1, elements, index, size - index - 1);
-    } else {
-      elements[size - 1] = null;
     }
     size--;
+    elements[size] = null;
     return removedElement;
   }
 
   @Override
-  public Object get(int index) {
-    if (index < 0 || index > size) {
-      throw new IndexOutOfBoundsException(
-          "Wrong index, index must belong to the interval [0; size of the list]");
-    }
-    return elements[index];
+  @SuppressWarnings("unchecked")
+  public T get(int index) {
+    ListUtils.checkIndex(index, size);
+    return (T) elements[index];
   }
 
   @Override
-  public Object set(Object value, int index) {
-    if (index < 0 || index > size) {
-      throw new IndexOutOfBoundsException(
-          "Wrong index, index must belong to the interval [0; size of the list]");
-    }
-    Object previousValue = elements[index];
+  @SuppressWarnings("unchecked")
+  public T set(Object value, int index) {
+    ListUtils.checkIndex(index, size);
+    T previousValue = (T) elements[index];
     elements[index] = value;
     return previousValue;
   }
@@ -92,18 +80,28 @@ public class ArrayList implements List {
     return size;
   }
 
+  public int capacity(){
+    return elements.length;
+  }
+
   @Override
   public boolean isEmpty() {
     return size == 0;
   }
 
   @Override
-  public boolean contains(Object value) {
-    return indexOf(value) != -1;
+  public boolean contains(T value) {
+    // Not indexOf(value) != -1; because this version is more effective.
+    for (int i = 0; i < size / 2; i++) {
+      if (Objects.equals(elements[i], value) || Objects.equals(elements[size - i - 1], value)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
-  public int indexOf(Object value) {
+  public int indexOf(T value) {
     for (int i = 0; i < size; i++) {
       if (Objects.equals(elements[i], value)) {
         return i;
@@ -113,7 +111,7 @@ public class ArrayList implements List {
   }
 
   @Override
-  public int lastIndexOf(Object value) {
+  public int lastIndexOf(T value) {
     for (int i = size - 1; i >= 0; i--) {
       if (Objects.equals(elements[i], value)) {
         return i;
@@ -124,15 +122,51 @@ public class ArrayList implements List {
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder("[");
+    StringJoiner sj = new StringJoiner(", ", "[", "]");
     for (int i = 0; i < size; i++) {
-      sb.append(" ").append(elements[i]);
-      if (i != size - 1) {
-        sb.append(",");
-      } else {
-        sb.append(" ");
-      }
+      sj.add(String.valueOf(elements[i]));
     }
-    return sb.append("]").toString();
+    return sj.toString();
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Iterator<T> iterator() {
+    return new Iterator<T>() {
+      int counter = -1;
+      boolean lastElementRemoved = false;
+
+      @Override
+      public boolean hasNext() {
+        return (counter < size - 1) && (size != 0);
+      }
+
+      @Override
+      public T next() {
+        if (lastElementRemoved || counter >= size - 1) {
+          throw new NoSuchElementException("There is no such element");
+        }
+        return (T) elements[++counter];
+      }
+
+      @Override
+      public void remove() {
+        if (counter < 0) {
+          throw new IllegalStateException(
+              "There is no elements for removing, counter before fist element!");
+        }
+        if (counter == size - 1) {
+          lastElementRemoved = true;
+        }
+        ArrayList.this.remove(counter);
+        counter--;
+      }
+    };
+  }
+
+  private void resize() {
+    Object[] temp = new Object[(int) (elements.length * GROWTH_FACTOR)];
+    System.arraycopy(elements, 0, temp, 0, size);
+    elements = temp;
   }
 }
