@@ -5,16 +5,10 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.StringJoiner;
 
-public class LinkedList<T> implements List<T>, Iterable<T> {
+public class LinkedList<T> extends AbstractList<T> implements List<T>, Iterable<T> {
 
   private Node<T> head;
   private Node<T> tail;
-  private int size;
-
-  @Override
-  public void add(T value) {
-    add(value, size);
-  }
 
   @Override
   public void add(T value, int index) {
@@ -41,11 +35,13 @@ public class LinkedList<T> implements List<T>, Iterable<T> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public T remove(int index) {
     ListUtils.checkIndex(index, size);
     Node<T> removedElement;
-    if (index == 0) {
+    if (size == 1) {
+      removedElement = head;
+      head = tail = null;
+    } else if (index == 0) {
       removedElement = head;
       head = head.next;
     } else if (index == size - 1) {
@@ -58,7 +54,7 @@ public class LinkedList<T> implements List<T>, Iterable<T> {
       previousElement.next.previous = previousElement;
     }
     size--;
-    return (T) removedElement;
+    return removedElement.element;
   }
 
   @Override
@@ -68,28 +64,18 @@ public class LinkedList<T> implements List<T>, Iterable<T> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public T set(T value, int index) {
     ListUtils.checkIndex(index, size);
     Node<T> currentElement = getNodeByIndex(index);
+    Node<T> oldElement = new Node<>(currentElement.element);
     currentElement.element = value;
-    return (T) currentElement;
+    return oldElement.element;
   }
 
   @Override
   public void clear() {
     head = tail = null;
     size = 0;
-  }
-
-  @Override
-  public int size() {
-    return size;
-  }
-
-  @Override
-  public boolean isEmpty() {
-    return size == 0;
   }
 
   @Override
@@ -137,8 +123,8 @@ public class LinkedList<T> implements List<T>, Iterable<T> {
   public String toString() {
     StringJoiner sj = new StringJoiner(", ", "[", "]");
     Node<T> current = head;
-    while (current != null) {
-      sj.add(String.valueOf(current.element));
+    for (T element : this) {
+      sj.add(String.valueOf(element));
       current = current.next;
     }
     return sj.toString();
@@ -147,9 +133,8 @@ public class LinkedList<T> implements List<T>, Iterable<T> {
   @Override
   public Iterator<T> iterator() {
     return new Iterator<T>() {
-      Node<T> current = null;
+      Node<T> current = head;
       int counter = -1;
-      boolean lastElementRemoved = false;
 
       @Override
       public boolean hasNext() {
@@ -158,7 +143,7 @@ public class LinkedList<T> implements List<T>, Iterable<T> {
 
       @Override
       public T next() {
-        if (lastElementRemoved || counter >= size - 1) {
+        if (counter >= size - 1) {
           throw new NoSuchElementException("There is no such element");
         }
         if (counter == -1) {
@@ -176,9 +161,6 @@ public class LinkedList<T> implements List<T>, Iterable<T> {
           throw new IllegalStateException(
               "There is no elements for removing, counter before fist element!");
         }
-        if (Objects.equals(current, tail)) {
-          lastElementRemoved = true;
-        }
         current = current.previous;
         LinkedList.this.remove(counter);
         counter--;
@@ -186,7 +168,7 @@ public class LinkedList<T> implements List<T>, Iterable<T> {
     };
   }
 
-  Node<T> getNodeByIndex(int index) {
+  private Node<T> getNodeByIndex(int index) {
     Node<T> current;
     if (index < size / 2) {
       current = head;

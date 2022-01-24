@@ -5,28 +5,23 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.StringJoiner;
 
-public class ArrayList<T> implements List<T>, Iterable<T> {
+public class ArrayList<T> extends AbstractList<T> implements List<T>, Iterable<T> {
 
   private static final double GROWTH_FACTOR = 1.5;
   private static final int DEFAULT_CAPACITY = 10;
-  private Object[] elements;
-  private int size;
+  private T[] elements;
 
   public ArrayList() {
     this(DEFAULT_CAPACITY);
   }
 
+  @SuppressWarnings("unchecked")
   public ArrayList(int initialCapacity) {
     if (initialCapacity > 0) {
-      elements = new Object[initialCapacity];
+      elements = (T[]) new Object[initialCapacity];
     } else {
       throw new IllegalArgumentException("Initial capacity should be at least 1");
     }
-  }
-
-  @Override
-  public void add(T value) {
-    add(value, size);
   }
 
   @Override
@@ -41,10 +36,9 @@ public class ArrayList<T> implements List<T>, Iterable<T> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public T remove(int index) {
     ListUtils.checkIndex(index, size);
-    T removedElement = (T) elements[index];
+    T removedElement = elements[index];
     if (index < size - 1) {
       System.arraycopy(elements, index + 1, elements, index, size - index - 1);
     }
@@ -54,39 +48,28 @@ public class ArrayList<T> implements List<T>, Iterable<T> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public T get(int index) {
     ListUtils.checkIndex(index, size);
-    return (T) elements[index];
+    return elements[index];
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public T set(Object value, int index) {
+  public T set(T value, int index) {
     ListUtils.checkIndex(index, size);
-    T previousValue = (T) elements[index];
+    T previousValue = elements[index];
     elements[index] = value;
     return previousValue;
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void clear() {
-    elements = new Object[DEFAULT_CAPACITY];
+    elements = (T[]) new Object[DEFAULT_CAPACITY];
     size = 0;
   }
 
-  @Override
-  public int size() {
-    return size;
-  }
-
-  public int capacity(){
+  public int capacity() {
     return elements.length;
-  }
-
-  @Override
-  public boolean isEmpty() {
-    return size == 0;
   }
 
   @Override
@@ -123,18 +106,16 @@ public class ArrayList<T> implements List<T>, Iterable<T> {
   @Override
   public String toString() {
     StringJoiner sj = new StringJoiner(", ", "[", "]");
-    for (int i = 0; i < size; i++) {
-      sj.add(String.valueOf(elements[i]));
+    for (T element : this) {
+      sj.add(String.valueOf(element));
     }
     return sj.toString();
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Iterator<T> iterator() {
     return new Iterator<T>() {
       int counter = -1;
-      boolean lastElementRemoved = false;
 
       @Override
       public boolean hasNext() {
@@ -143,10 +124,10 @@ public class ArrayList<T> implements List<T>, Iterable<T> {
 
       @Override
       public T next() {
-        if (lastElementRemoved || counter >= size - 1) {
+        if (counter >= size - 1) {
           throw new NoSuchElementException("There is no such element");
         }
-        return (T) elements[++counter];
+        return elements[++counter];
       }
 
       @Override
@@ -155,17 +136,15 @@ public class ArrayList<T> implements List<T>, Iterable<T> {
           throw new IllegalStateException(
               "There is no elements for removing, counter before fist element!");
         }
-        if (counter == size - 1) {
-          lastElementRemoved = true;
-        }
         ArrayList.this.remove(counter);
         counter--;
       }
     };
   }
 
+  @SuppressWarnings("unchecked")
   private void resize() {
-    Object[] temp = new Object[(int) (elements.length * GROWTH_FACTOR)];
+    T[] temp = (T[]) new Object[(int) (elements.length * GROWTH_FACTOR)];
     System.arraycopy(elements, 0, temp, 0, size);
     elements = temp;
   }

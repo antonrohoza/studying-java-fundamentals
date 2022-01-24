@@ -34,9 +34,7 @@ public abstract class TestList {
   @Test
   void addByIndex() {
     list.add("O");
-    list.add("M");
-    list.add("N");
-    list.add("B");
+    list.add("I");
     list.add("E", 2);
     list.add("K", 0);
     list.add("L", 1);
@@ -47,16 +45,26 @@ public abstract class TestList {
   @Test
   void removeByIndex() {
     list.add("C");
-    list.remove(1);
+    list.add("K");
+    assertEquals(4, list.size());
+    String removedElement = list.remove(2);
+    assertEquals(3, list.size());
+    assertEquals("C", removedElement);
     list.remove(0);
-    assertEquals("C", list.get(0));
+    assertEquals("B", list.get(0));
   }
 
-  @DisplayName("Removing not existing element should throw IndexOutOfBounds exception")
   @Test
   void removingNotExistingElementByIndexShouldThrowIndexOutOfBounds() {
     list.remove(1);
     assertThrows(IndexOutOfBoundsException.class, () -> list.remove(1));
+  }
+
+  @Test
+  void removingNotExistingElementInEmptyList() {
+    list.remove(1);
+    list.remove(0);
+    assertThrows(IllegalStateException.class, () -> list.remove(0));
   }
 
   @Test
@@ -67,10 +75,9 @@ public abstract class TestList {
 
   @Test
   void setByIndex() {
-    list.set("O", 0);
-    list.set("L", 1);
+    String oldElementWithIndex0 = list.set("O", 0);
+    assertEquals("A", oldElementWithIndex0);
     assertEquals("O", list.get(0));
-    assertEquals("L", list.get(1));
   }
 
 
