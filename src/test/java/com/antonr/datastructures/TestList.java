@@ -152,16 +152,6 @@ public abstract class TestList {
   }
 
   @Test
-  void throwExceptionWhenIterationIsFinished() {
-    list.add("K");
-    Iterator<String> iterator = list.iterator();
-    while (iterator.hasNext()) {
-      iterator.next();
-    }
-    assertThrows(NoSuchElementException.class, iterator::next);
-  }
-
-  @Test
   void throwExceptionWhenIterationDidntStart() {
     Iterator<String> iterator = list.iterator();
     assertThrows(IllegalStateException.class, iterator::remove);
