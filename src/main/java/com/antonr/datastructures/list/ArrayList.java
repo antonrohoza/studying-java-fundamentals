@@ -1,4 +1,4 @@
-package com.antonr.datastructures;
+package com.antonr.datastructures.list;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;

@@ -1,4 +1,4 @@
-package com.antonr.datastructures;
+package com.antonr.datastructures.list;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;

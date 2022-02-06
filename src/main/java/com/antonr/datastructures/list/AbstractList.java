@@ -1,4 +1,4 @@
-package com.antonr.datastructures;
+package com.antonr.datastructures.list;
 
 public abstract class AbstractList<T> implements List<T> {
 

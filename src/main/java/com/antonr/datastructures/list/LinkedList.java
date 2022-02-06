@@ -1,4 +1,4 @@
-package com.antonr.datastructures;
+package com.antonr.datastructures.list;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -193,6 +193,7 @@ public class LinkedList<T> extends AbstractList<T> implements List<T>, Iterable<
     public Node(T element) {
       this.element = element;
     }
+
   }
 
 }
