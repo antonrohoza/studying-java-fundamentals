@@ -3,7 +3,7 @@ package com.antonr.datastructures.map;
 import java.util.Iterator;
 import java.util.Set;
 
-public interface Map<K, V> {
+public interface Map<K, V> extends Iterable<Map.Entry<K, V>>{
 
   V put(K key, V value);
 
@@ -26,9 +26,5 @@ public interface Map<K, V> {
     V getValue();
 
     V setValue(V value);
-
-    boolean equals(Object o);
-
-    int hashCode();
   }
 }

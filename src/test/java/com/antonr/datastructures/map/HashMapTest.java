@@ -41,11 +41,15 @@ class HashMapTest {
     String first = "AaAa";
     String second = "BBBB";
     String third = "AaBB";
-    Map<String, Integer> map = new HashMap<>();
+    Map<String, Integer> map = new HashMap<>(4);
     map.put(first, 1);
     map.put(second, 2);
     map.put(third, 3);
     map.put(second, 4);
+    map.put("2",2);
+    map.put("3",3);
+    map.put("4",4);
+    map.put("5",5);
     assertEquals(1, map.get(first));
     assertEquals(4, map.get(second));
     assertEquals(3, map.get(third));
@@ -94,7 +98,5 @@ class HashMapTest {
     map.put("1", "1");
     map.put("2", "2");
     assertEquals(2, map.entrySet().size());
-    assertTrue(map.entrySet().remove(new HashMap.Entry<>("2", "2")));
-    assertFalse(map.entrySet().contains(new HashMap.Entry<>("2", "2")));
   }
 }

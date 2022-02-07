@@ -5,10 +5,11 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 
-public class HashMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
+public class HashMap<K, V> implements Map<K, V> {
 
   private static final int DEFAULT_CAPACITY = 16;
   private static final float DEFAULT_LOAD_FACTOR = 0.75f;
+  private static final int GROWS_FACTOR = 2;
   private Entry<K, V>[] buckets;
   private int size = 0;
 
@@ -21,18 +22,137 @@ public class HashMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
     buckets = new Entry[initialCapacity];
   }
 
-  // Similar to java7 implementation
-  static class Entry<K, V> implements Map.Entry<K, V> {
-
-    final K key;
-    V value;
-    Entry<K, V> next;
-
-    public Entry(K key, V value) {
-      this.key = key;
-      this.value = value;
-      this.next = null;
+  @Override
+  public V put(K key, V value) {
+    int bucketIndex = getBucketIndex(key, buckets.length);
+    Entry<K, V> oldEntry = buckets[bucketIndex];
+    Entry<K, V> newEntry = new Entry<>(key, value, null);
+    // current bucket is empty
+    if (oldEntry == null) {
+      buckets[bucketIndex] = newEntry;
+      size++;
+      if (size >= buckets.length * DEFAULT_LOAD_FACTOR) {
+        resize();
+      }
+      return null;
+    } else {
+      // bucket has one element
+      if (oldEntry.next == null) {
+        // keys which were put to map were the same
+        if (key.equals(oldEntry.getKey())) {
+          buckets[bucketIndex] = newEntry;
+        } else {
+          oldEntry.next = newEntry;
+          size++;
+        }
+        return oldEntry.getValue();
+        // current entry in chain of collisions
+      } else {
+        Entry<K, V> currentEntry = oldEntry;
+        while (currentEntry.next != null) {
+          if (key.equals(currentEntry.getKey())) {
+            return currentEntry.setValue(value);
+          }
+          currentEntry = currentEntry.next;
+        }
+        currentEntry.next = newEntry;
+        size++;
+        return currentEntry.getValue();
+      }
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  private void resize() {
+    Entry<K, V>[] newArr = new Entry[buckets.length * GROWS_FACTOR];
+    for (Entry<K, V> entry : buckets) {
+      if (entry != null) {
+        int newBucketIndex = getBucketIndex(entry.getKey(), newArr.length);
+        newArr[newBucketIndex] = entry;
+      }
+    }
+    buckets = newArr;
+  }
+
+  private int getBucketIndex(K key, int bucketsLength) {
+    if (key == null) {
+      return 0;
+    }
+    // ensure that the result is non negative
+    return (key.hashCode() & Integer.MAX_VALUE) % bucketsLength;
+  }
+
+  @Override
+  public V get(K key) {
+    int bucketIndex = getBucketIndex(key, buckets.length);
+    Entry<K, V> entry = buckets[bucketIndex];
+    if (entry.next == null) {
+      return entry.getValue();
+    }
+    Entry<K, V> currentEntry = entry;
+    while (!currentEntry.getKey().equals(key)) {
+      currentEntry = currentEntry.next;
+    }
+    return currentEntry.getValue();
+  }
+
+  @Override
+  public V remove(K key) {
+    int bucketIndex = getBucketIndex(key, buckets.length);
+    Entry<K, V> oldEntry = buckets[bucketIndex];
+    if (oldEntry.next == null) {
+      buckets[bucketIndex] = null;
+    } else {
+      Entry<K, V> currentEntry = oldEntry;
+      while (!currentEntry.next.getKey().equals(key)) {
+        currentEntry = currentEntry.next;
+      }
+      if (currentEntry.next.next != null) {
+        currentEntry.next = currentEntry.next.next;
+      } else {
+        currentEntry.next = null;
+      }
+    }
+    size--;
+    return oldEntry.getValue();
+  }
+
+  @Override
+  public boolean containsKey(K key) {
+    int hash = getBucketIndex(key, buckets.length);
+    Entry<K, V> entry = buckets[hash];
+    if (entry != null && entry.next != null) {
+      while (entry != null) {
+        if (key.equals(entry.getKey())) {
+          return true;
+        }
+        entry = entry.next;
+      }
+    }
+    return entry != null;
+  }
+
+  @Override
+  public int size() {
+    return size;
+  }
+
+  @Override
+  public Set<Map.Entry<K, V>> entrySet() {
+    return new EntrySet();
+  }
+
+  @Override
+  public java.util.Iterator<Map.Entry<K, V>> iterator() {
+    return new Iterator();
+  }
+
+  // Similar to java7 implementation
+  private static class Entry<K, V> implements Map.Entry<K, V> {
+
+    private final K key;
+    private V value;
+    private Entry<K, V> next;
 
     public Entry(K key, V value, Entry<K, V> next) {
       this.key = key;
@@ -75,132 +195,12 @@ public class HashMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
     }
   }
 
-  @Override
-  public V put(K key, V value) {
-    int bucketIndex = getBucketIndex(key);
-    Entry<K, V> oldEntry = buckets[bucketIndex];
-    Entry<K, V> newEntry = new Entry<>(key, value, null);
-    // current bucket is empty
-    if (oldEntry == null) {
-      buckets[bucketIndex] = newEntry;
-      size++;
-      if (size == buckets.length * DEFAULT_LOAD_FACTOR) {
-        resize();
-      }
-      return null;
-    } else {
-      // bucket has one element
-      if (oldEntry.next == null) {
-        // keys which were put to map were the same
-        if (key.equals(oldEntry.getKey())) {
-          buckets[bucketIndex] = newEntry;
-        } else {
-          oldEntry.next = newEntry;
-          size++;
-        }
-        return oldEntry.getValue();
-        // current entry in chain of collisions
-      } else {
-        Entry<K, V> currentEntry = oldEntry;
-        while (currentEntry.next != null) {
-          if (key.equals(currentEntry.getKey())) {
-            return currentEntry.setValue(value);
-          }
-          currentEntry = currentEntry.next;
-        }
-        currentEntry.next = newEntry;
-        size++;
-        return currentEntry.getValue();
-      }
-    }
-  }
+  private class Iterator implements java.util.Iterator<Map.Entry<K, V>> {
 
-  @SuppressWarnings("unchecked")
-  private void resize() {
-    Entry<K, V>[] newArr = new Entry[buckets.length * 2];
-    System.arraycopy(buckets, 0, newArr, 0, buckets.length);
-    buckets = newArr;
-  }
-
-  private int getBucketIndex(K key) {
-    if (key == null) {
-      return 0;
-    }
-    // ensure that the result is non negative
-    return (key.hashCode() & Integer.MAX_VALUE) % buckets.length;
-  }
-
-  @Override
-  public V get(K key) {
-    int bucketIndex = getBucketIndex(key);
-    Entry<K, V> entry = buckets[bucketIndex];
-    if (entry.next == null) {
-      return entry.getValue();
-    }
-    Entry<K, V> currentEntry = entry;
-    while (!currentEntry.getKey().equals(key)) {
-      currentEntry = currentEntry.next;
-    }
-    return currentEntry.getValue();
-  }
-
-  @Override
-  public V remove(K key) {
-    int bucketIndex = getBucketIndex(key);
-    Entry<K, V> oldEntry = buckets[bucketIndex];
-    if (oldEntry.next == null) {
-      buckets[bucketIndex] = null;
-    } else {
-      Entry<K, V> currentEntry = oldEntry;
-      while (!currentEntry.next.getKey().equals(key)) {
-        currentEntry = currentEntry.next;
-      }
-      if (currentEntry.next.next != null) {
-        currentEntry.next = currentEntry.next.next;
-      } else {
-        currentEntry.next = null;
-      }
-    }
-    size--;
-    return oldEntry.getValue();
-  }
-
-  @Override
-  public boolean containsKey(K key) {
-    int hash = getBucketIndex(key);
-    Entry<K, V> entry = buckets[hash];
-    if (entry != null && entry.next != null) {
-      while (entry != null) {
-        if (key.equals(entry.getKey())) {
-          return true;
-        }
-        entry = entry.next;
-      }
-    }
-    return entry != null;
-  }
-
-  @Override
-  public int size() {
-    return size;
-  }
-
-  @Override
-  public Set<Map.Entry<K, V>> entrySet() {
-    return new EntrySet();
-  }
-
-  @Override
-  public java.util.Iterator<Map.Entry<K, V>> iterator() {
-    return new Iterator();
-  }
-
-  class Iterator implements java.util.Iterator<Map.Entry<K, V>> {
-
-    Entry<K, V> currentEntry;
+    private Entry<K, V> currentEntry;
     // field for easy check if next element exist
-    Entry<K, V> nextEntry;
-    int bucketIndex = 0;
+    private Entry<K, V> nextEntry;
+    private int bucketIndex;
 
     public Iterator() {
       while (bucketIndex < buckets.length) {
@@ -241,8 +241,20 @@ public class HashMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
         throw new IllegalStateException(
             "There is no elements for removing, counter before fist element!");
       }
-      currentEntry = null;
-      HashMap.this.remove(removingEntry.getKey());
+      if (removingEntry.next == null) {
+        buckets[bucketIndex] = null;
+      } else {
+        Entry<K, V> currentEntry = removingEntry;
+        while (!currentEntry.next.getKey().equals(removingEntry.getKey())) {
+          currentEntry = currentEntry.next;
+        }
+        if (currentEntry.next.next != null) {
+          currentEntry.next = currentEntry.next.next;
+        } else {
+          currentEntry.next = null;
+        }
+      }
+      size--;
     }
   }
 
@@ -258,7 +270,7 @@ public class HashMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
         return false;
       }
       Map.Entry<K, V> e = (Map.Entry<K, V>) o;
-      Entry<K, V> entry = buckets[getBucketIndex(e.getKey())];
+      Entry<K, V> entry = buckets[getBucketIndex(e.getKey(), buckets.length)];
       return entry != null && entry.equals(e);
     }
 
